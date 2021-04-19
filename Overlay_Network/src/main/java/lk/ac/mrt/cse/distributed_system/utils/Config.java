@@ -1,5 +1,7 @@
 package lk.ac.mrt.cse.distributed_system.utils;
 
+import java.nio.file.Paths;
+
 public class Config {
     //Bootstrap details
     public static String BOOTSTRAP_IP = "127.0.0.1";
@@ -29,10 +31,9 @@ public class Config {
     public static final String ECHO = "ECHO";
     public static final String SEARCHFILE = "SEARCH";
     public static final String DOWNLOAD = "DOWNLOAD";
-    public static final String FILECONTAINER = "/var/tmp/overlay/generated_files";
-    //public static final String FILENAMESTEXT = "../file_names.txt";
-    public static final String DOWNLOADED = "/var/tmp/overlay/downloaded_files";
-    public static final String FILENAMESTEXT =  "/var/tmp/overlay/File Names.txt";
+    public static final String FILENAMESTEXT = Paths.get("").toAbsolutePath().toString() + "/../File Names.txt";
+    public static final String FILECONTAINER = Paths.get("").toAbsolutePath().toString() + "/../generated_files";
+    public static final String DOWNLOADED = Paths.get("").toAbsolutePath().toString() + "/../downloaded_files";
     public static final String GETSTATS = "GETSTATS";
     public static final String CLEARSTATS = "CLEARSTATS";
     public static final String SHOWROUTES = "SHOWROUTES";
