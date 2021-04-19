@@ -56,6 +56,16 @@ public class Node implements Runnable {
         }
     }
 
+    private void sendUnRegRequest() throws IOException {
+        String message = Config.UNREG + " " + ip + " " + port + " " + username;
+        int msgLength = message.length() + 5;
+        message = format("%04d", msgLength) + " " + message;
+        InetAddress address = InetAddress.getByName(serverHostName);
+        DatagramPacket request = new DatagramPacket(message.getBytes(), message.getBytes().length, address, serverHostPort);
+        socket.send(request);
+        System.out.println("Request sent: " + message);
+    }
+
     public void initiateNode() {
 
         String userInput;
@@ -139,16 +149,6 @@ public class Node implements Runnable {
             System.out.println("Node error: " + ex.getMessage());
             ex.printStackTrace();
         }
-    }
-
-    private void sendUnRegRequest() throws IOException {
-        String message = Config.UNREG + " " + ip + " " + port + " " + username;
-        int msgLength = message.length() + 5;
-        message = format("%04d", msgLength) + " " + message;
-        InetAddress address = InetAddress.getByName(serverHostName);
-        DatagramPacket request = new DatagramPacket(message.getBytes(), message.getBytes().length, address, serverHostPort);
-        socket.send(request);
-        System.out.println("Request sent: " + message);
     }
 
     private ArrayList<String> search(String query) throws IOException {
