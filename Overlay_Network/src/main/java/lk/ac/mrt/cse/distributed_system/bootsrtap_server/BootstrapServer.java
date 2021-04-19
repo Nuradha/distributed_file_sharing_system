@@ -41,8 +41,7 @@ public class BootstrapServer {
                 String command = st.nextToken();
 
                 if (command.equals(Config.REG)) {
-                    String reply = "REGOK ";
-
+                    String reply = Config.REGOK + " ";
                     String ip = st.nextToken();
                     int port = Integer.parseInt(st.nextToken());
                     String username = st.nextToken();
