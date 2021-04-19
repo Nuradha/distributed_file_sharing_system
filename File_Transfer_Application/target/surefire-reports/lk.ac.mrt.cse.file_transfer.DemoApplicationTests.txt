@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: lk.ac.mrt.cse.file_transfer.DemoApplicationTests
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.453 s - in lk.ac.mrt.cse.file_transfer.DemoApplicationTests
