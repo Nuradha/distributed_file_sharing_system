@@ -1,12 +1,12 @@
 package lk.ac.mrt.cse.file_transfer.payload;
 
-public class UploadFileResponse {
+public class UploadResponse {
     private String fileName;
     private String fileDownloadUri;
     private String fileType;
     private long size;
 
-    public UploadFileResponse(String fileName, String fileDownloadUri, String fileType, long size) {
+    public UploadResponse(String fileName, String fileDownloadUri, String fileType, long size) {
         this.fileName = fileName;
         this.fileDownloadUri = fileDownloadUri;
         this.fileType = fileType;

@@ -1,7 +1,7 @@
 package lk.ac.mrt.cse.file_transfer.Controller;
 
-import lk.ac.mrt.cse.file_transfer.payload.UploadFileResponse;
-import lk.ac.mrt.cse.file_transfer.service.FileStorageService;
+import lk.ac.mrt.cse.file_transfer.payload.UploadResponse;
+import lk.ac.mrt.cse.file_transfer.service.FileService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,50 +23,36 @@ public class FileController {
     private static final Logger logger = LoggerFactory.getLogger(FileController.class);
 
     @Autowired
-    private FileStorageService fileStorageService;
-
-
-    @PostMapping("/uploadFile")
-    public UploadFileResponse uploadFile(@RequestParam("file") MultipartFile file) {
-        String fileName = fileStorageService.storeFile(file);
-
-        String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
-                .path("/downloadFile/")
-                .path(fileName)
-                .toUriString();
-
-        return new UploadFileResponse(fileName, fileDownloadUri, file.getContentType(), file.getSize());
-    }
-
-    @PostMapping("/uploadMultipleFiles")
-    public List<UploadFileResponse> uploadMultipleFiles(@RequestParam("files") MultipartFile[] files) {
-        return Arrays.asList(files)
-                .stream()
-                .map(file -> uploadFile(file))
-                .collect(Collectors.toList());
-    }
+    private FileService fileService;
 
     @GetMapping("/downloadFile/{fileName:.+}")
     public ResponseEntity<Resource> downloadFile(@PathVariable String fileName, HttpServletRequest request) {
-        // Load file as Resource
-        Resource resource = fileStorageService.loadFileAsResource(fileName);
-
-        // Try to determine file's content type
+        Resource resource = fileService.loadFileAsResource(fileName);
         String contentType = null;
         try {
             contentType = request.getServletContext().getMimeType(resource.getFile().getAbsolutePath());
         } catch (IOException ex) {
-            logger.info("Could not determine file type.");
+            logger.info("Invalid file type");
         }
 
-        // Fallback to the default content type if type could not be determined
-        if(contentType == null) {
-            contentType = "application/octet-stream";
-        }
+        if(contentType == null) contentType = "application/octet-stream";
 
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(contentType))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
-                .body(resource);
+        return ResponseEntity.ok().contentType(MediaType.parseMediaType(contentType)).
+                header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"").
+                body(resource);
     }
+
+    @PostMapping("/uploadFile")
+    public UploadResponse uploadFile(@RequestParam("file") MultipartFile file) {
+        String name = fileService.storeFile(file);
+        String uri = ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/downloadFile/").path(name).toUriString();
+        return new UploadResponse(name, uri, file.getContentType(), file.getSize());
+    }
+
+    @PostMapping("/uploadMultipleFiles")
+    public List<UploadResponse> uploadMultipleFiles(@RequestParam("files") MultipartFile[] files) {
+        return Arrays.stream(files).map(this::uploadFile).collect(Collectors.toList());
+    }
+
 }
