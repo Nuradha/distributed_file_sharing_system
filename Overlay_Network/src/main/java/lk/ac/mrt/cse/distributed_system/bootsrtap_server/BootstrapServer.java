@@ -1,6 +1,6 @@
 package lk.ac.mrt.cse.distributed_system.bootsrtap_server;
 
-import lk.ac.mrt.cse.distributed_system.model.NodeNeighbour;
+import lk.ac.mrt.cse.distributed_system.model.Neighbour;
 import lk.ac.mrt.cse.distributed_system.utils.Config;
 
 import java.io.IOException;
@@ -17,7 +17,7 @@ public class BootstrapServer {
         System.out.println("In bootstrap server");
         DatagramSocket sock = null;
         String s;
-        List<NodeNeighbour> nodes = new ArrayList<NodeNeighbour>();
+        List<Neighbour> nodes = new ArrayList<Neighbour>();
 
         try {
             sock = new DatagramSocket(Config.BOOTSTRAP_PORT);
@@ -48,7 +48,7 @@ public class BootstrapServer {
                     echo("Username is : " + username);
                     if (nodes.size() == 0) {
                         reply += "0";
-                        nodes.add(new NodeNeighbour(ip, port, username));
+                        nodes.add(new Neighbour(ip, port, username));
                     } else {
                         boolean isOkay = true;
                         for (int i = 0; i < nodes.size(); i++) {
@@ -80,7 +80,7 @@ public class BootstrapServer {
                                 reply += "2 " + nodes.get(random_1).getIp() + " " + nodes.get(random_1).getPort() + " " + nodes.get(random_1).getUsername() + " " + nodes.get(random_2).getIp() + " " +
                                         nodes.get(random_2).getPort() + " " + nodes.get(random_2).getUsername();
                             }
-                            nodes.add(new NodeNeighbour(ip, port, username));
+                            nodes.add(new Neighbour(ip, port, username));
                         }
                     }
 

@@ -1,5 +1,5 @@
 import lk.ac.mrt.cse.distributed_system.bootsrtap_server.BootstrapServer;
-import lk.ac.mrt.cse.distributed_system.node.Node;
+import lk.ac.mrt.cse.distributed_system.processor.Node;
 
 public class OverlayNetwork {
 
@@ -22,7 +22,7 @@ public class OverlayNetwork {
                 node.initiateNode();
             }
             else{
-                System.out.println("RParameter value should be value 1 or 2 (1: master node, 2: peer node)");
+                System.out.println("Parameter value should be value 1 or 2 (1: master node, 2: peer node)");
             }
         }
     }
