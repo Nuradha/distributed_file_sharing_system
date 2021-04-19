@@ -10,9 +10,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 		FileStorageProperties.class
 })
 public class FileTransferApplication {
-
 	public static void main(String[] args) {
 		SpringApplication.run(FileTransferApplication.class, args);
 	}
-
 }
