@@ -37,27 +37,40 @@ public class Node implements Runnable {
     private int forwardedQueryMessagesCount = 0;
     private int answeredQueryMessagesCount = 0;
 
-    private String serverHostName = Config.BOOTSTRAP_IP; //Bootstrap server ip
-    private int serverHostPort = Config.BOOTSTRAP_PORT; //Bootstrap server port
+    private String serverHostName = Config.BOOTSTRAP_IP;
+    private int serverHostPort = Config.BOOTSTRAP_PORT;
+
+
+    private void sendJoinRequests() throws IOException {
+        //DatagramSocket socket = new DatagramSocket(port);
+
+        String message = Config.JOIN + " " + ip + " " + port + " " + username;
+        int msgLength = message.length() + 5;
+        message = format("%04d", msgLength) + " " + message;
+
+        for (NodeNeighbour node : neighboursList) {
+            InetAddress address = InetAddress.getByName(node.getIp());
+            DatagramPacket request = new DatagramPacket(message.getBytes(), message.getBytes().length, address, node.getPort());
+            socket.send(request);
+            System.out.println("Request sent: " + message);
+        }
+    }
 
     public void initiateNode() {
 
         String userInput;
         Scanner scanner = new Scanner(System.in);
 
-        System.out.println("Enter node IP address : ");
+        System.out.println("Enter node IP : ");
         userInput = scanner.next();
-        //TODO:  validate user input
         this.ip = userInput;
 
         System.out.println("Enter node port : ");
         userInput = scanner.next();
-        //TODO:  validate user input
         this.port = Integer.parseInt(userInput);
 
         System.out.println("Enter node username : ");
         userInput = scanner.next();
-        //TODO:  validate user input
         this.username = userInput;
 
         try {
@@ -83,42 +96,35 @@ public class Node implements Runnable {
 
             String nodeCount = reply.substring(11, 12);
             if (nodeCount.equals("0")) {
-                // request is successful, no nodes in the system
-                System.out.println("Request is successful. " + username + " registered as first node in the system");
+                System.out.println("Request successful. " + username + " is the first node in the system");
                 this.fileGenerate();
             } else if (nodeCount.equals("1")) {
-                // request is successful, 1 contact will be returned
                 String[] neighbour1 = reply.substring(13).split("\\s+");
                 neighboursList.add(new NodeNeighbour(neighbour1[0], Integer.parseInt(neighbour1[1]), neighbour1[2]));
-                System.out.println("Request is successful. " + username + " registered as second node in the system. Sending 1 node contact to join with...");
+                System.out.println("Request successful. " + username + " is the second node in the system. Sending 1 nodes information...");
                 this.fileGenerate();
                 sendJoinRequests();
             } else if (nodeCount.equals("2")) {
-                // request is successful, 2 contacts will be returned
                 String[] neighbour1 = reply.substring(13).split("\\s+");
                 neighboursList.add(new NodeNeighbour(neighbour1[0], Integer.parseInt(neighbour1[1]), neighbour1[2]));
                 neighboursList.add(new NodeNeighbour(neighbour1[3], Integer.parseInt(neighbour1[4]), neighbour1[5]));
-                System.out.println("Request is successful. Sending 2 node contacts to join with...");
+                System.out.println("Request successful. Sending 2 nodes information...");
                 this.fileGenerate();
                 sendJoinRequests();
             } else {
                 String errorCode = reply.substring(11, 15);
                 if (errorCode.equals("9999")) {
-                    // failed, there is some error in the command
-                    System.out.println("Command failed. There is some error in the command. Retry node initiation.");
+                    System.out.println("Command failed. Try initiating node again.");
                     System.exit(0);
                 } else if (errorCode.equals("9998")) {
-                    // failed,  already registered to you, unregister first
-                    System.out.println("Command failed. Node is already registered. Unregister using \'UNREG\' command.");
+                    System.out.println("Command failed. Node registered. Unregister using \'UNREG\' command.");
                     sendUnRegRequest();
                     System.exit(0);
                 } else if (errorCode.equals("9997")) {
-                    // failed,   registered to another user, try a different IP and port
-                    System.out.println("Command failed. IP and port already in use. Retry initiation with different IP and port");
+                    System.out.println("Command failed. IP, port already in use. Retry initiation with different IP, port");
                     System.exit(0);
                 } else if (errorCode.equals("9996")) {
-                    // failed,  can’t register. BS full.
-                    System.out.println("Cannot register more nodes. Server is full.");
+                    System.out.println("Server full.");
                     System.exit(0);
                 }
             }
@@ -132,21 +138,6 @@ public class Node implements Runnable {
         } catch (IOException ex) {
             System.out.println("Node error: " + ex.getMessage());
             ex.printStackTrace();
-        }
-    }
-
-    private void sendJoinRequests() throws IOException {
-        //DatagramSocket socket = new DatagramSocket(port);
-
-        String message = Config.JOIN + " " + ip + " " + port + " " + username;
-        int msgLength = message.length() + 5;
-        message = format("%04d", msgLength) + " " + message;
-
-        for (NodeNeighbour node : neighboursList) {
-            InetAddress address = InetAddress.getByName(node.getIp());
-            DatagramPacket request = new DatagramPacket(message.getBytes(), message.getBytes().length, address, node.getPort());
-            socket.send(request);
-            System.out.println("Request sent: " + message);
         }
     }
 
@@ -183,7 +174,7 @@ public class Node implements Runnable {
     }
 
     public void run() {
-        System.out.println("Node is listening on port " + port);
+        System.out.println("Node listening on port " + port);
         DatagramSocket sock = null;
         String dataReceived;
 
@@ -205,7 +196,6 @@ public class Node implements Runnable {
                 String command = "";
                 String length = "";
 
-                //Handles separately because they are user initiated commands
                 if (firstToken.equals(Config.SEARCHFILE) || firstToken.equals(Config.DOWNLOAD) ||
                         firstToken.equals(Config.GETSTATS) || firstToken.equals(Config.CLEARSTATS) ||
                         firstToken.equals(Config.SHOWROUTES) || firstToken.equals(Config.LEAVENET)) {
@@ -216,7 +206,7 @@ public class Node implements Runnable {
                 }
 
                 if (command.equals(Config.JOIN)) {
-                    System.out.println("Message received from address " + incoming.getAddress().getHostAddress() + ":" +
+                    System.out.println("Message received from " + incoming.getAddress().getHostAddress() + ":" +
                             incoming.getPort() + " - " + dataReceived);
                     String reply = Config.JOINOK + " 0";
                     int msgLength = reply.length() + 5;
@@ -226,27 +216,27 @@ public class Node implements Runnable {
                     int port = Integer.parseInt(st.nextToken());
                     String username = st.nextToken();
 
-                    System.out.println(ip + ":" + port + " is joining node " + username);
+                    System.out.println(ip + ":" + port + " joining node " + username);
                     neighboursList.add(new NodeNeighbour(ip, port, username));
 
                     DatagramPacket dpReply = new DatagramPacket(reply.getBytes(), reply.getBytes().length, incoming.getAddress(), incoming.getPort());
                     sock.send(dpReply);
                 } else if (command.equals(Config.JOINOK)) {
-                    System.out.println("Message received from address " + incoming.getAddress().getHostAddress() + ":" +
+                    System.out.println("Message received from " + incoming.getAddress().getHostAddress() + ":" +
                             incoming.getPort() + " - " + dataReceived);
                     String status = st.nextToken();
                     if (status.equals("0")) {
                         System.out.println("Join successful");
                     } else if (status.equals("9999")) {
-                        System.out.println("Error while adding new node to routing table");
+                        System.out.println("Error while adding new node");
                     }
                 } else if (command.equals(Config.NODEUNREG)) {
-                    System.out.println("Message received from address " + incoming.getAddress().getHostAddress() + ":" +
+                    System.out.println("Message received from " + incoming.getAddress().getHostAddress() + ":" +
                             incoming.getPort() + " - " + dataReceived);
                     sendUnRegRequest();
 
                 } else if (command.equals(Config.UNROK)) {
-                    System.out.println("Message received from address " + incoming.getAddress().getHostAddress() + ":" +
+                    System.out.println("Message received from " + incoming.getAddress().getHostAddress() + ":" +
                             incoming.getPort() + " - " + dataReceived);
                     for (NodeNeighbour n : neighboursList) {
                         String message = Config.LEAVE + " " + ip + " " + port;
@@ -259,7 +249,7 @@ public class Node implements Runnable {
 
 
                 } else if (command.equals(Config.LEAVE)) {
-                    System.out.println("Message received from address " + incoming.getAddress().getHostAddress() + ":" +
+                    System.out.println("Message received from " + incoming.getAddress().getHostAddress() + ":" +
                             incoming.getPort() + " - " + dataReceived);
                     String leaveIP = st.nextToken();
                     String message = Config.LEAVEOK;
@@ -281,7 +271,7 @@ public class Node implements Runnable {
                     }
 
                 } else if (command.equals(Config.LEAVEOK)) {
-                    System.out.println("Message received from address " + incoming.getAddress().getHostAddress() + ":" +
+                    System.out.println("Message received from " + incoming.getAddress().getHostAddress() + ":" +
                             incoming.getPort() + " - " + dataReceived);
                     String status = st.nextToken();
                     if (status.equals("0")) {
@@ -291,9 +281,8 @@ public class Node implements Runnable {
                     }
 
                 } else if (command.equals(Config.SEARCHFILE)) {
-                    System.out.println("Message received from address " + incoming.getAddress().getHostAddress() + ":" +
+                    System.out.println("Message received from " + incoming.getAddress().getHostAddress() + ":" +
                             incoming.getPort() + " - " + dataReceived);
-                    // SEARCHFILE hopsToSearch query
                     int initialHopCount = Integer.parseInt(st.nextToken());
                     String query = "";
                     while (st.hasMoreTokens()) {
@@ -317,7 +306,7 @@ public class Node implements Runnable {
 
                 } else if (command.equals(Config.SER)) {
                     receivedQueryMessagesCount++;
-                    System.out.println("Message received from address " + incoming.getAddress().getHostAddress() + ":" +
+                    System.out.println("Message received from " + incoming.getAddress().getHostAddress() + ":" +
                             incoming.getPort() + " - " + dataReceived);
                     String searchNodeIP = st.nextToken();
                     String searchNodePort = st.nextToken();
@@ -340,8 +329,7 @@ public class Node implements Runnable {
                     }
 
                 } else if (command.equals(Config.SEROK)) {
-                    //length SEROK no_files IP port hopsWhenFound filename1 filename2 ... ... queryID
-                    System.out.println("Message received from address " + incoming.getAddress().getHostAddress() + ":" +
+                    System.out.println("Message received from " + incoming.getAddress().getHostAddress() + ":" +
                             incoming.getPort() + " - " + dataReceived);
                     int fileCount = Integer.parseInt(st.nextToken());
                     String IPHavingFile = st.nextToken();
@@ -373,7 +361,7 @@ public class Node implements Runnable {
                         forwardSearchResults(Integer.parseInt(hopsWhenFound), resultFileList, queryID);
                     }
                 } else if (command.equals(Config.DOWNLOAD)) {
-                    System.out.println("Message received from address " + incoming.getAddress().getHostAddress() + ":" +
+                    System.out.println("Message received from " + incoming.getAddress().getHostAddress() + ":" +
                             incoming.getPort() + " - " + dataReceived);
                     //DOWNLOAD filename
                     String filename = st.nextToken();
@@ -398,7 +386,7 @@ public class Node implements Runnable {
 
 
                     } else {
-                        System.out.println("File you requested to download is not available in search results");
+                        System.out.println("File you requested to download is unavailable in results");
                     }
                 } else if (command.equals(Config.GETSTATS)) {
                     System.out.println("Node : " + username + " - " + ip + ":" + port + " search statistics");
@@ -432,7 +420,6 @@ public class Node implements Runnable {
 
     }
 
-
     private void initiateRemoteSearch(String query, int hopCount, String queryID, int initialHopCount, String senderIP, int senderPort) throws IOException {
         DatagramSocket sock = this.socket;
         for (NodeNeighbour node : neighboursList) {
@@ -456,7 +443,6 @@ public class Node implements Runnable {
 
         String requestorIP = queryList.get(queryID).split(":")[0];
         int requestorPort = Integer.parseInt(queryList.get(queryID).split(":")[1]);
-        //length SEROK no_files IP port hopsWhenFound filename1 filename2 ... ... queryID
         String fileSet = "";
         for (String file : searchResults) {
             fileSet = file + " ";
@@ -475,7 +461,6 @@ public class Node implements Runnable {
 
         String requestorIP = queryList.get(queryID).split(":")[0];
         int requestorPort = Integer.parseInt(queryList.get(queryID).split(":")[1]);
-        //length SEROK no_files IP port hopsWhenFound filename1 filename2 ... ... queryID
         String fileSet = "";
         for (String file : searchResults) {
             fileSet = file + " ";
@@ -534,18 +519,13 @@ public class Node implements Runnable {
         String encoded = Base64.getEncoder().encodeToString(hash);
         System.out.println("File: " + filename + "Hash:" + encoded);
 
-        System.out.println("Downloading Completed\n");
+        System.out.println("Downloading Complete\n");
     }
-
 
     private void fileGenerate() throws IOException {
         ArrayList<String> fileNames = new ArrayList<>();
         BufferedReader reader;
         try {
-//            String path = "resources";
-//            ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-//            path = classLoader.getResource(path).getPath().split("target")[0].substring(1)+"src/main/resources/File Names.txt";;
-
             reader = new BufferedReader(new FileReader(Config.FILENAMESTEXT));
             String line = reader.readLine();
             while (line != null) {
@@ -558,7 +538,7 @@ public class Node implements Runnable {
             e.printStackTrace();
         }
         int number_of_files = getRandomNumberInRange(3,5);
-        System.out.println("number of files in the node:"+ number_of_files);
+        System.out.println("number of files in node:"+ number_of_files);
         int i = 0;
         Set file_numbers = new HashSet();
         while (i < number_of_files) {
@@ -598,7 +578,7 @@ public class Node implements Runnable {
     private static int getRandomNumberInRange(int min, int max) {
 
         if (min >= max) {
-            throw new IllegalArgumentException("max must be greater than min");
+            throw new IllegalArgumentException("max smaller than min");
         }
 
         Random r = new Random();

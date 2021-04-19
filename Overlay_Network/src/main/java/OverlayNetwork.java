@@ -10,13 +10,13 @@ public class OverlayNetwork {
         } else {
             String mode = args[0];
             if (mode.equals("1"))
-            {                     //Starts the bootstrap server
+            {
                 System.out.println("Selected Node Type: Master Node");
                 BootstrapServer server = new BootstrapServer();
                 server.startServer();
             }
             else if (mode.equals("2"))
-            {              //Starts a node with the given port and ip address
+            {
                 System.out.println("Selected Node Type: Peer Node");
                 Node node = new Node();
                 node.initiateNode();
